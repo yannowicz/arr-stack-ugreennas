@@ -1,11 +1,10 @@
-
-#####################################################################
-# ⚠️  NEVER use 'docker compose down' - kills Pi-hole DNS!        #
-# ⚠️  You WILL lose internet before you can run 'up -d'           #
-#                                                                   #
+#######################################################################
+# ⚠️  NEVER use 'docker compose down' - kills Pi-hole DNS!            #
+# ⚠️  You WILL lose internet before you can run 'up -d'               #
+#                                                                     #
 # ✅ Safe restart: docker compose -f docker-compose.arr-stack.yml up -d --force-recreate
-# ✅ Or use:       ./scripts/restart-stack.sh                      #
-#####################################################################
+# ✅ Or use:       ./scripts/restart-stack.sh                          #
+#######################################################################
 
 #########################
 # Centralized Volumes   #
@@ -17,6 +16,9 @@ volumes:
   sonarr-config:
   prowlarr-config:
   radarr-config:
+  lidarr-config:
+  readarr-config:
+  mylarr-config:
   jellyfin-config:
   jellyfin-cache:
   jellyseerr-config:
@@ -54,7 +56,8 @@ services:
   # All services below marked "via VPN" share this network for privacy.
   # ═══════════════════════════════════════════════════════════════════════════
   gluetun:
-    image: qmcgaw/gluetun:v3.41
+    #image: qmcgaw/gluetun:v3.41
+    image: qmcgaw/gluetun:latest
     container_name: gluetun
     depends_on:
       pihole:
@@ -69,9 +72,14 @@ services:
       # VPN Configuration - see .env.example for provider-specific setup
       - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}
       - VPN_TYPE=${VPN_TYPE}
-      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
-      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
-      - SERVER_COUNTRIES=${VPN_COUNTRIES}
+      # - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      # - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      - OPENVPN_USER=${OPENVPN_USER}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      - SERVER_COUNTRIES=${SERVER_COUNTRIES}
+      - SERVER_CITIES=${SERVER_CITIES}
+      - SERVER_CATEGORIES=${SERVER_CATEGORIES}
+      # - SERVER_HOSTNAME=${SERVER_HOSTNAME}
       - TZ=${TZ}
       - DNS_ADDRESS=172.20.0.5
       - FIREWALL_OUTBOUND_SUBNETS=${LAN_SUBNET},172.20.0.0/24,10.8.1.0/24
@@ -81,8 +89,12 @@ services:
       - "8989:8989"   # Sonarr
       - "7878:7878"   # Radarr
       - "9696:9696"   # Prowlarr
+      - "8686:8686"   # Lidarr
+      - "8787:8787"   # Readarr
+      - "8090:8090"   # Mylar3
       - "8085:8085"   # qBittorrent
       - "8082:8080"   # SABnzbd
+      
     networks:
       arr-stack:
         ipv4_address: 172.20.0.3
@@ -101,7 +113,8 @@ services:
   # Access: qbit.lan | qbit.yourdomain.com | NAS_IP:8085
   # ═══════════════════════════════════════════════════════════════════════════
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:5.1.4
+    #image: lscr.io/linuxserver/qbittorrent:5.1.4
+    image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
     network_mode: "service:gluetun"
     depends_on:
@@ -116,7 +129,7 @@ services:
       - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
       - qbittorrent-config:/config
-      - ${MEDIA_ROOT}/downloads:/downloads
+      - ${MEDIA_DOWNLOAD}:/downloads
     labels:
       - deunhealth.restart.on.unhealthy=true
     restart: always
@@ -132,39 +145,41 @@ services:
   # SABNZBD - Usenet download client. Downloads via VPN for extra security.
   # Access: sabnzbd.lan | sabnzbd.yourdomain.com | NAS_IP:8082
   # ═══════════════════════════════════════════════════════════════════════════
-  sabnzbd:
-    image: lscr.io/linuxserver/sabnzbd:4.5.5
-    container_name: sabnzbd
-    network_mode: "service:gluetun"
-    depends_on:
-      gluetun:
-        condition: service_healthy
-        restart: true
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - sabnzbd-config:/config
-      - ${MEDIA_ROOT}/downloads:/downloads
-      - ${MEDIA_ROOT}/downloads/incomplete:/incomplete-downloads
-    labels:
-      - deunhealth.restart.on.unhealthy=true
-    restart: always
-    logging: *default-logging
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/ && wget -q --spider --timeout=5 http://www.google.com"]
-      interval: 3m
-      timeout: 15s
-      retries: 2
-      start_period: 60s
+  #sabnzbd:
+  #  #image: lscr.io/linuxserver/sabnzbd:4.5.5
+  #  image: lscr.io/linuxserver/sabnzbd:latest
+  #  container_name: sabnzbd
+  #  network_mode: "service:gluetun"
+  #  depends_on:
+  #    gluetun:
+  #      condition: service_healthy
+  #      restart: true
+  #  environment:
+  #    - PUID=${PUID}
+  #    - PGID=${PGID}
+  #    - TZ=${TZ}
+  #  volumes:
+  #    - sabnzbd-config:/config
+  #    - ${MEDIA_ROOT}/downloads:/downloads
+  #    - ${MEDIA_ROOT}/downloads/incomplete:/incomplete-downloads
+  #  labels:
+  #    - deunhealth.restart.on.unhealthy=true
+  #  restart: always
+  #  logging: *default-logging
+  #  healthcheck:
+  #    test: ["CMD-SHELL", "curl -sf http://localhost:8080/ && wget -q --spider --timeout=5 http://www.google.com"]
+  #    interval: 3m
+  #    timeout: 15s
+  #    retries: 2
+  #    start_period: 60s
 
   # ═══════════════════════════════════════════════════════════════════════════
   # SONARR - TV show monitor. Watches for new episodes and sends to download.
   # Access: sonarr.lan | sonarr.yourdomain.com | NAS_IP:8989
   # ═══════════════════════════════════════════════════════════════════════════
   sonarr:
-    image: lscr.io/linuxserver/sonarr:4.0.16
+    #image: lscr.io/linuxserver/sonarr:4.0.16
+    image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
     network_mode: "service:gluetun"
     depends_on:
@@ -177,8 +192,8 @@ services:
       - TZ=${TZ}
     volumes:
       - sonarr-config:/config
-      - ${MEDIA_ROOT}/tv:/tv
-      - ${MEDIA_ROOT}/downloads:/downloads
+      - ${VIDEO}/sonarr:/tv
+      - ${MEDIA_DOWNLOAD}:/downloads
     labels:
       - deunhealth.restart.on.unhealthy=true
     restart: always
@@ -195,7 +210,8 @@ services:
   # Access: prowlarr.lan | prowlarr.yourdomain.com | NAS_IP:9696
   # ═══════════════════════════════════════════════════════════════════════════
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:2.3.0
+    #image: lscr.io/linuxserver/prowlarr:2.3.0
+    image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
     network_mode: "service:gluetun"
     depends_on:
@@ -224,7 +240,8 @@ services:
   # Access: radarr.lan | radarr.yourdomain.com | NAS_IP:7878
   # ═══════════════════════════════════════════════════════════════════════════
   radarr:
-    image: lscr.io/linuxserver/radarr:6.0.4
+    #image: lscr.io/linuxserver/radarr:6.0.4
+    image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
     network_mode: "service:gluetun"
     depends_on:
@@ -237,8 +254,8 @@ services:
       - TZ=${TZ}
     volumes:
       - radarr-config:/config
-      - ${MEDIA_ROOT}/movies:/movies
-      - ${MEDIA_ROOT}/downloads:/downloads
+      - ${VIDEO}/radarr:/movies
+      - ${MEDIA_DOWNLOAD}:/downloads
     labels:
       - deunhealth.restart.on.unhealthy=true
     restart: always
@@ -251,11 +268,104 @@ services:
       start_period: 60s
 
   # ═══════════════════════════════════════════════════════════════════════════
+  # LIDARR - Music monitor. SWatches for new music and sends to download.
+  # Access: lidarr.lan | lidarr.yourdomain.com | NAS_IP:8686
+  # ═══════════════════════════════════════════════════════════════════════════  
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - lidarr-config:/config
+      - ${MUSIC}:/movies
+      - ${MEDIA_DOWNLOAD}:/downloads
+    labels:
+      - deunhealth.restart.on.unhealthy=true
+    restart: always
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8686/ && wget -q --spider --timeout=5 http://www.google.com"]
+      interval: 2m
+      timeout: 15s
+      retries: 2
+      start_period: 60s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # READARR - Book monitor. SWatches for new Book and sends to download.
+  # Access: readarr.lan | readarr.yourdomain.com | NAS_IP:8787
+  # ═══════════════════════════════════════════════════════════════════════════
+  readarr:
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - readarr-config:/config
+      - ${BOOK}:/books
+      - ${MEDIA_DOWNLOAD}:/downloads
+    labels:
+      - deunhealth.restart.on.unhealthy=true
+    restart: always
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8787/ && wget -q --spider --timeout=5 http://www.google.com"]
+      interval: 2m
+      timeout: 15s
+      retries: 2
+      start_period: 60s  
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # MYLAR3 - Comics monitor. SWatches for new Comics and sends to download.
+  # Access: mylar3.lan | mylar3.yourdomain.com | NAS_IP:8090
+  # ═══════════════════════════════════════════════════════════════════════════
+  #mylar3:
+  #  image: lscr.io/linuxserver/mylar3:latest
+  #  container_name: mylar3
+  #  network_mode: "service:gluetun"
+  #  depends_on:
+  #    gluetun:
+  #      condition: service_healthy
+  #      restart: true
+  #  environment:
+  #    - PUID=${PUID}
+  #    - PGID=${PGID}
+  #    - TZ=${TZ}
+  #  volumes:
+  #    - mylar3-config:/config
+  #    - ${BOOK}:/books
+  #    - ${MEDIA_DOWNLOAD}:/downloads
+  #  labels:
+  #    - deunhealth.restart.on.unhealthy=true
+  #  restart: always
+  #  logging: *default-logging
+  #  healthcheck:
+  #    test: ["CMD-SHELL", "curl -sf http://localhost:8090/ && wget -q --spider --timeout=5 http://www.google.com"]
+  #    interval: 2m
+  #    timeout: 15s
+  #    retries: 2
+  #    start_period: 60s  
+
+  # ═══════════════════════════════════════════════════════════════════════════
   # JELLYFIN - Media server. Stream your movies and TV shows like Netflix.
   # Access: jellyfin.lan | jellyfin.yourdomain.com | NAS_IP:8096
   # ═══════════════════════════════════════════════════════════════════════════
   jellyfin:
-    image: jellyfin/jellyfin:10.11
+    image: jellyfin/jellyfin:latest
     container_name: jellyfin
     ports:
       - "8096:8096"     # Web UI
@@ -271,8 +381,21 @@ services:
     volumes:
       - jellyfin-config:/config
       - jellyfin-cache:/cache
-      - ${MEDIA_ROOT}/movies:/media/movies:ro
-      - ${MEDIA_ROOT}/tv:/media/tv:ro
+      - ${VIDEO}/Anime:/media/anime:ro
+      - ${VIDEO}/Anime_Series:/media/anime_series:ro
+      - ${VIDEO}/Docu_Series:/media/docu_series:ro
+      - ${VIDEO}/Documentaries:/media/documentaries:ro
+      - ${VIDEO}/DVD_image:/media/dvd:ro
+      - ${VIDEO}/eLearning:/media/eLearning:ro
+      - ${VIDEO}/Home_Video:/media/home_video:ro
+      - ${VIDEO}/Magic:/media/magic:ro
+      - ${VIDEO}/Misc:/media/misc:ro
+      - ${VIDEO}/Movie:/media/movies:ro
+      - ${VIDEO}/Short:/media/short:ro
+      - ${VIDEO}/Sports:/media/sports:ro
+      - ${VIDEO}/StandUp:/media/standup:ro
+      - ${VIDEO}/TV_Show:/media/tv:ro
+
     networks:
       arr-stack:
         ipv4_address: 172.20.0.4
@@ -291,7 +414,8 @@ services:
   # For: Home Pro + Anywhere setups
   # ═══════════════════════════════════════════════════════════════════════════
   pihole:
-    image: pihole/pihole:2025.11.1
+    #image: pihole/pihole:2025.11.1
+    image: pihole/pihole:latest
     container_name: pihole
     ports:
       - "${NAS_IP}:53:53/tcp"  # Bind to NAS IP (not 0.0.0.0) to avoid conflict with host dnsmasq on 127.0.0.1:53
@@ -324,7 +448,8 @@ services:
   # Access: jellyseerr.lan | jellyseerr.yourdomain.com | NAS_IP:5055
   # ═══════════════════════════════════════════════════════════════════════════
   jellyseerr:
-    image: fallenbagel/jellyseerr:2.7
+    #image: fallenbagel/jellyseerr:2.7
+    image: fallenbagel/jellyseerr:latest
     container_name: jellyseerr
     depends_on:
       gluetun:
@@ -354,7 +479,8 @@ services:
   # Access: bazarr.lan | bazarr.yourdomain.com | NAS_IP:6767
   # ═══════════════════════════════════════════════════════════════════════════
   bazarr:
-    image: lscr.io/linuxserver/bazarr:1.5.5
+    #image: lscr.io/linuxserver/bazarr:v1.5.5
+    image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
     depends_on:
       gluetun:
@@ -386,7 +512,8 @@ services:
   # No web UI. Used internally by Prowlarr at 172.20.0.10:8191
   # ═══════════════════════════════════════════════════════════════════════════
   flaresolverr:
-    image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
+    #image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
+    image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
     environment:
       - LOG_LEVEL=info
@@ -407,4 +534,3 @@ services:
       timeout: 60s
       retries: 2
       start_period: 2m
-
