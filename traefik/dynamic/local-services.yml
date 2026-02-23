@@ -46,7 +46,7 @@ http:
       service: prowlarr-lan
     
     lidarr-lan:
-      rule: "Host(`lidarrr.lan`)"
+      rule: "Host(`lidarr.lan`)"
       entryPoints: [web]
       service: lidarr-lan
 
