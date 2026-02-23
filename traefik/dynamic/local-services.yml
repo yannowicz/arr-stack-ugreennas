@@ -44,6 +44,16 @@ http:
       rule: "Host(`prowlarr.lan`)"
       entryPoints: [web]
       service: prowlarr-lan
+    
+    lidarr-lan:
+      rule: "Host(`lidarrr.lan`)"
+      entryPoints: [web]
+      service: lidarr-lan
+
+    mylar3-lan:
+      rule: "Host(`mylar3.lan`)"
+      entryPoints: [web]
+      service: mylar3-lan
 
     bazarr-lan:
       rule: "Host(`bazarr.lan`)"
