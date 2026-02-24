@@ -24,9 +24,6 @@ volumes:
   bazarr-config:
   jellyfin-config:
   jellyfin-cache:
-  recyclar-config:
-  recyclarr-data:
-  
 
 #########################
 # Networks              #
@@ -130,7 +127,6 @@ services:
       - "8090:8090"   # Mylar3
       - "8085:8085"   # qBittorrent
       - "8082:8080"   # SABnzbd
-      
     networks:
       arr-stack:
         ipv4_address: 172.20.0.3
@@ -482,28 +478,6 @@ services:
       interval: 3m
       timeout: 10s
       retries: 2
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # RECYCLARR - Subtitle manager. Automatically downloads subtitles.
-  # Access: recyclarr.lan | recyclarr.yourdomain.com | NAS_IP:
-  # ═══════════════════════════════════════════════════════════════════════════
-  recyclarr:
-    image: ghcr.io/recyclarr/recyclarr
-    container_name: recyclarr
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    networks:
-      arr-stack:
-        ipv4_address: 172.20.0.17
-    volumes:
-      - ./recyclarr:/config
-      - recyclarr-data:/data
-    labels:
-      - deunhealth.restart.on.unhealthy=true
-    restart: always
-    logging: *default-logging
     
   # ═══════════════════════════════════════════════════════════════════════════
   # FLARESOLVERR - Cloudflare bypass. Helps Prowlarr access protected sites.

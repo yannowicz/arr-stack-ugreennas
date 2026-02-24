@@ -1,0 +1,40 @@
+#########################
+# Centralized Volumes   #
+#########################
+volumes:
+  recyclarr-data:
+
+#########################
+# Logging               #
+#########################
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+#########################
+# Services              #
+#########################
+services:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # RECYCLARR - Subtitle manager. Automatically downloads subtitles.
+  # Access: recyclarr.lan | recyclarr.yourdomain.com | NAS_IP:
+  # ═══════════════════════════════════════════════════════════════════════════
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr
+    container_name: recyclarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    networks:
+      arr-stack:
+        ipv4_address: 172.20.0.17
+    volumes:
+      - ./recyclarr:/config
+      - recyclarr-data:/data
+    labels:
+      - deunhealth.restart.on.unhealthy=true
+    restart: always
+    logging: *default-logging
