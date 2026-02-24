@@ -388,7 +388,8 @@ services:
     volumes:
       - jellyfin-config:/config
       - jellyfin-cache:/cache
-      - ${VIDEO}:ro
+      - ${ARR_DATA}/media:/data/media/:ro
+      - ${MEDIA_ROOT}/Video/:/data/Video:ro
     #  - ${VIDEO}/Anime:/media/anime:ro
     #  - ${VIDEO}/Anime_Series:/media/anime_series:ro
     #  - ${VIDEO}/Docu_Series:/media/docu_series:ro
