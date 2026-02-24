@@ -322,8 +322,8 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - lidarr-config:/config
-      - ${MUSIC}/lidarr:/music
       - ${ARR_DATA}:/data
     labels:
       - deunhealth.restart.on.unhealthy=true
