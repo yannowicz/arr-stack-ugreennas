@@ -1,8 +1,16 @@
+name: arr-stack_recyclar
 #########################
 # Centralized Volumes   #
 #########################
 volumes:
   recyclarr-data:
+
+#########################
+# Networks              #
+#########################
+networks:
+  arr-stack:
+    external: true
 
 #########################
 # Logging               #

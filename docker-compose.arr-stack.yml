@@ -386,20 +386,6 @@ services:
       - jellyfin-cache:/cache
       - ${ARR_DATA}/media:/data/media/:ro
       - ${MEDIA_ROOT}/Video/:/data/Video:ro
-    #  - ${VIDEO}/Anime:/media/anime:ro
-    #  - ${VIDEO}/Anime_Series:/media/anime_series:ro
-    #  - ${VIDEO}/Docu_Series:/media/docu_series:ro
-    #  - ${VIDEO}/Documentaries:/media/documentaries:ro
-    #  - ${VIDEO}/DVD_image:/media/dvd:ro
-    #  - ${VIDEO}/eLearning:/media/eLearning:ro
-    #  - ${VIDEO}/Home_Video:/media/home_video:ro
-    #  - ${VIDEO}/Magic:/media/magic:ro
-    #  - ${VIDEO}/Misc:/media/misc:ro
-    #  - ${VIDEO}/Movie:/media/movies:ro
-    #  - ${VIDEO}/Short:/media/short:ro
-    #  - ${VIDEO}/Sports:/media/sports:ro
-    #  - ${VIDEO}/StandUp:/media/standup:ro
-    #  - ${VIDEO}/TV_Show:/media/tv:ro
 
     networks:
       arr-stack:
