@@ -33,16 +33,16 @@ services:
     image: ghcr.io/recyclarr/recyclarr
     container_name: recyclarr
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
     networks:
       arr-stack:
-        ipv4_address: 172.20.0.17
+
     volumes:
       - ./recyclarr:/config
       - recyclarr-data:/data
     labels:
       - deunhealth.restart.on.unhealthy=true
-    restart: always
+    restart: unless-stopped
     logging: *default-logging

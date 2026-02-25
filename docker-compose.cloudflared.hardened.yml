@@ -3,16 +3,12 @@
 #
 # What it does:
 # - Creates an encrypted tunnel from your NAS to Cloudflare's network
-# - Routes jellyfin.yourdomain.com → your Jellyfin through the tunnel
-# - No ports exposed on your router = more secure
+# - Routes your public hostnames (e.g., jellyfin.${DOMAIN}) to internal services
+# - No inbound ports exposed on your router
 #
-# You DON'T need this if you're only accessing services locally.
-# Requires: Cloudflare account (free), domain pointed to Cloudflare.
-#
-# No web UI - runs silently in background.
-#
-# NOTE: Uses separate project name so compose operations on other files
-# don't accidentally stop the tunnel (was causing Error 1033).
+# Notes:
+# - Keep this stack independent so restarting other stacks doesn't kill the tunnel.
+# - Prefer "unless-stopped" to avoid restart loops during maintenance.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 name: cloudflared
@@ -22,11 +18,15 @@ services:
     image: cloudflare/cloudflared:2026.2.0
     container_name: cloudflared
     command: tunnel --config /home/nonroot/.cloudflared/config.yml run
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
     volumes:
       - ./cloudflared:/home/nonroot/.cloudflared:ro
     networks:
-      arr-stack:
-        ipv4_address: 172.20.0.12
+      - arr-stack
     healthcheck:
       test: ["CMD", "cloudflared", "tunnel", "info", "nas-tunnel"]
       interval: 30s
@@ -35,7 +35,7 @@ services:
       start_period: 30s
     labels:
       - "deunhealth.restart.on.unhealthy=true"
-    restart: always
+    restart: unless-stopped
     logging:
       driver: "json-file"
       options:

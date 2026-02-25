@@ -1,0 +1,47 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# DNS STACK (STABLE HOMELAB)
+#
+# Runs Pi-hole on the HOST network so DNS never depends on Docker networking.
+#
+# Why this matters:
+# - No more static Docker IPs for DNS
+# - No more "docker compose down" killing your whole LAN's DNS unexpectedly
+# - Faster/more reliable boot (no bridge IP race)
+#
+# Access:
+# - DNS: NAS_IP:53
+# - UI : http://NAS_IP:8081/admin
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    network_mode: host
+    environment:
+      TZ: ${TZ}
+      FTLCONF_webserver_api_password: ${PIHOLE_UI_PASS}
+      FTLCONF_dns_listeningMode: all
+    volumes:
+      - pihole-etc-pihole:/etc/pihole
+      - pihole-etc-dnsmasq:/etc/dnsmasq.d
+      - ./pihole/02-local-dns.conf:/etc/dnsmasq.d/02-local-dns.conf:ro
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    init: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "dig", "@127.0.0.1", "-p", "53", "google.com", "+short"]
+      interval: 30s
+      timeout: 10s
+      retries: 2
+      start_period: 30s
+
+volumes:
+  pihole-etc-pihole:
+  pihole-etc-dnsmasq:

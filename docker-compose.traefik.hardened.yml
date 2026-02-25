@@ -17,12 +17,15 @@ services:
   traefik:
     image: traefik:v3.0
     container_name: traefik
-    restart: always
+    restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
     networks:
       arr-stack:
-        ipv4_address: 172.20.0.2
+
       # macvlan gives Traefik its own LAN IP where it can use port 80
       # (NAS owns port 80 on its IP, but Traefik owns it on TRAEFIK_LAN_IP)
       traefik-lan:
@@ -32,9 +35,9 @@ services:
       # Dashboard only - HTTP served via macvlan IP on port 80
       - "9090:8080" # Traefik Dashboard
     environment:
-      - TZ=${TZ}
-      - CF_API_EMAIL=${CF_API_EMAIL}
-      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+      TZ: ${TZ}
+      CF_API_EMAIL: ${CF_API_EMAIL}
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro

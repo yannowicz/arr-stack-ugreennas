@@ -1,17 +1,17 @@
 #######################################################################
-# ⚠️  NEVER use 'docker compose down' - kills Pi-hole DNS!            #
-# ⚠️  You WILL lose internet before you can run 'up -d'               #
-#                                                                     #
-# ✅ Safe restart: docker compose -f docker-compose.arr-stack.yml up -d --force-recreate
-# ✅ Or use:       ./scripts/restart-stack.sh                          #
+# ARR + VPN + MEDIA STACK
+#
+# Safe restart:
+#   docker compose -f docker-compose.arr-stack.hardened.yml up -d --force-recreate
+#
+# NOTE: Pi-hole is moved to docker-compose.dns.yml (host network) for stability.
 #######################################################################
 
 #########################
 # Centralized Volumes   #
 #########################
 volumes:
-  pihole-etc-pihole:
-  pihole-etc-dnsmasq:
+
   gluetun-config:
   qbittorrent-config:
   sabnzbd-config:
@@ -51,41 +51,6 @@ x-logging: &default-logging
 #########################
 services:
   # ═══════════════════════════════════════════════════════════════════════════
-  # PI-HOLE - DNS server. Enables .lan domains and blocks ads network-wide.
-  # Access: pihole.lan/admin | NAS_IP:8081/admin
-  # For: Home Pro + Anywhere setups
-  # ═══════════════════════════════════════════════════════════════════════════
-  pihole:
-    #image: pihole/pihole:2025.11.1
-    image: pihole/pihole:latest
-    container_name: pihole
-    ports:
-      - "${NAS_IP}:53:53/tcp"  # Bind to NAS IP (not 0.0.0.0) to avoid conflict with host dnsmasq on 127.0.0.1:53
-      - "${NAS_IP}:53:53/udp"  # NAS_IP MUST be a static IP — DHCP IPs aren't ready at boot, causing exit 128
-      - "8081:80"  # Web UI (local network access)
-    networks:
-      arr-stack:
-        ipv4_address: 172.20.0.5
-    environment:
-      - TZ=${TZ}
-      - FTLCONF_webserver_api_password=${PIHOLE_UI_PASS}
-      - FTLCONF_dns_listeningMode=all
-    volumes:
-      - pihole-etc-pihole:/etc/pihole
-      - pihole-etc-dnsmasq:/etc/dnsmasq.d
-      - ./pihole/02-local-dns.conf:/etc/dnsmasq.d/02-local-dns.conf:ro
-    cap_add:
-      - NET_ADMIN
-    restart: always
-    logging: *default-logging
-    healthcheck:
-      test: ["CMD", "dig", "@127.0.0.1", "-p", "53", "google.com", "+short"]
-      interval: 30s
-      timeout: 10s
-      retries: 2
-      start_period: 30s
-
-  # ═══════════════════════════════════════════════════════════════════════════
   # GLUETUN - VPN gateway. Routes download traffic through your VPN provider.
   # All services below marked "via VPN" share this network for privacy.
   # ═══════════════════════════════════════════════════════════════════════════
@@ -93,9 +58,7 @@ services:
     #image: qmcgaw/gluetun:v3.41
     image: qmcgaw/gluetun:latest
     container_name: gluetun
-    depends_on:
-      pihole:
-        condition: service_healthy  # Wait for Pi-hole DNS before VPN connects
+    init: true
     cap_add:
       - NET_ADMIN
     devices:
@@ -104,19 +67,21 @@ services:
       - gluetun-config:/gluetun
     environment:
       # VPN Configuration - see .env.example for provider-specific setup
-      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}
-      - VPN_TYPE=${VPN_TYPE}
+      VPN_SERVICE_PROVIDER: ${VPN_SERVICE_PROVIDER}
+      VPN_TYPE: ${VPN_TYPE}
       # - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
       # - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
-      - OPENVPN_USER=${OPENVPN_USER}
-      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
-      - SERVER_COUNTRIES=${SERVER_COUNTRIES}
-      - SERVER_CITIES=${SERVER_CITIES}
-      - SERVER_CATEGORIES=${SERVER_CATEGORIES}
+      OPENVPN_USER: ${OPENVPN_USER}
+      OPENVPN_PASSWORD: ${OPENVPN_PASSWORD}
+      SERVER_COUNTRIES: ${SERVER_COUNTRIES}
+      SERVER_CITIES: ${SERVER_CITIES}
+      SERVER_CATEGORIES: ${SERVER_CATEGORIES}
       # - SERVER_HOSTNAME=${SERVER_HOSTNAME}
-      - TZ=${TZ}
-      - DNS_ADDRESS=172.20.0.5
-      - FIREWALL_OUTBOUND_SUBNETS=${LAN_SUBNET},172.20.0.0/24,10.8.1.0/24
+      TZ: ${TZ}
+      DNS_ADDRESS: "1.1.1.1"
+      DOT: "on"
+      FIREWALL_VPN_INPUT_PORTS: "8989,7878,9696,8686,8090,8085,8080,8096,5055,6767"
+      FIREWALL_OUTBOUND_SUBNETS: ${LAN_SUBNET},172.20.0.0/24,10.8.1.0/24
     ports:
       # Ports for services using network_mode: "service:gluetun"
       # Enables direct local access without Traefik (http://NAS_IP:PORT)
@@ -131,7 +96,7 @@ services:
       arr-stack:
         ipv4_address: 172.20.0.3
       vpn-net:
-    restart: always
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
@@ -154,17 +119,17 @@ services:
         condition: service_healthy
         restart: true
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - WEBUI_PORT=8085
-      - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      WEBUI_PORT: 8085
+      DOCKER_MODS: ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
       - qbittorrent-config:/config
       - ${ARR_DATA}/torrents:/data/torrents
     labels:
       - deunhealth.restart.on.unhealthy=true
-    restart: always
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8085/ && wget -q --spider --timeout=5 http://www.google.com"]
@@ -220,14 +185,14 @@ services:
         condition: service_healthy
         restart: true
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
     volumes:
       - prowlarr-config:/config
     labels:
       - deunhealth.restart.on.unhealthy=true
-    restart: always
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9696/ && wget -q --spider --timeout=5 http://www.google.com"]
@@ -250,16 +215,16 @@ services:
         condition: service_healthy
         restart: true
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - radarr-config:/config
       - ${ARR_DATA}:/data
     labels:
       - deunhealth.restart.on.unhealthy=true
-    restart: always
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:7878/ && wget -q --spider --timeout=5 http://www.google.com"]
@@ -282,16 +247,16 @@ services:
         condition: service_healthy
         restart: true
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - sonarr-config:/config
       - ${ARR_DATA}:/data
     labels:
       - deunhealth.restart.on.unhealthy=true
-    restart: always
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8989/ && wget -q --spider --timeout=5 http://www.google.com"]
@@ -314,16 +279,16 @@ services:
         condition: service_healthy
         restart: true
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - lidarr-config:/config
       - ${ARR_DATA}:/data
     labels:
       - deunhealth.restart.on.unhealthy=true
-    restart: always
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8686/ && wget -q --spider --timeout=5 http://www.google.com"]
@@ -375,7 +340,7 @@ services:
       - "7359:7359/udp" # Client discovery (auto-detect on LAN)
       - "1900:1900/udp" # DLNA
     environment:
-      - TZ=${TZ}
+      TZ: ${TZ}
     # Hardware transcoding (Intel Quick Sync) - remove these 4 lines if no Intel GPU
     devices:
       - /dev/dri:/dev/dri
@@ -386,11 +351,27 @@ services:
       - jellyfin-cache:/cache
       - ${ARR_DATA}/media:/data/media/:ro
       - ${MEDIA_ROOT}/Video/:/data/Video:ro
+    #  - ${VIDEO}/Anime:/media/anime:ro
+    #  - ${VIDEO}/Anime_Series:/media/anime_series:ro
+    #  - ${VIDEO}/Docu_Series:/media/docu_series:ro
+    #  - ${VIDEO}/Documentaries:/media/documentaries:ro
+    #  - ${VIDEO}/DVD_image:/media/dvd:ro
+    #  - ${VIDEO}/eLearning:/media/eLearning:ro
+    #  - ${VIDEO}/Home_Video:/media/home_video:ro
+    #  - ${VIDEO}/Magic:/media/magic:ro
+    #  - ${VIDEO}/Misc:/media/misc:ro
+    #  - ${VIDEO}/Movie:/media/movies:ro
+    #  - ${VIDEO}/Short:/media/short:ro
+    #  - ${VIDEO}/Sports:/media/sports:ro
+    #  - ${VIDEO}/StandUp:/media/standup:ro
+    #  - ${VIDEO}/TV_Show:/media/tv:ro
 
     networks:
       arr-stack:
+
+        ipv4_address: 172.20.0.3
         ipv4_address: 172.20.0.4
-    restart: always
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
@@ -415,15 +396,17 @@ services:
     ports:
       - "5055:5055"  # Local network access (all interfaces)
     environment:
-      - LOG_LEVEL=info
-      - TZ=${TZ}
-      - PORT=5055
+      LOG_LEVEL: info
+      TZ: ${TZ}
+      PORT: 5055
     networks:
       arr-stack:
+
+        ipv4_address: 172.20.0.3
         ipv4_address: 172.20.0.8
     volumes:
       - jellyseerr-config:/app/config
-    restart: always
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:5055/api/v1/status"]
@@ -446,18 +429,20 @@ services:
     ports:
       - "6767:6767"  # Local network access
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
     networks:
       arr-stack:
+
+        ipv4_address: 172.20.0.3
         ipv4_address: 172.20.0.9
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - bazarr-config:/config
       - ${MEDIA_ROOT}/media:/data/media
 
-    restart: always
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6767/"]
@@ -474,14 +459,15 @@ services:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
     environment:
-      - LOG_LEVEL=info
-      - TZ=${TZ}
+      LOG_LEVEL: info
+      TZ: ${TZ}
     networks:
       arr-stack:
+
         ipv4_address: 172.20.0.10
     labels:
       - deunhealth.restart.on.unhealthy=true
-    restart: always
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       # Actually test Chrome by making a solve request (catches Chrome crashes)

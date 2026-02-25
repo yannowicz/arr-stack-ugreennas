@@ -45,8 +45,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
-      - TZ=${TZ}
-    restart: always
+      TZ: ${TZ}
+    restart: unless-stopped
     logging: *default-logging
     healthcheck:
       test: ["CMD", "/app", "healthcheck"]
@@ -62,11 +62,11 @@ services:
   uptime-kuma:
     image: louislam/uptime-kuma:2
     container_name: uptime-kuma
-    restart: always
+    restart: unless-stopped
     ports:
       - "3001:3001"  # Local network access only
     environment:
-      - TZ=${TZ}
+      TZ: ${TZ}
     networks:
       arr-stack:
         ipv4_address: 172.20.0.13  # For monitoring other containers
@@ -91,16 +91,16 @@ services:
     container_name: duc
     networks:
       arr-stack:
-        ipv4_address: 172.20.0.14
+
     volumes:
       - /volume1:/scan/volume1:ro      # NAS data (read-only)
       - duc-index:/database            # Persistent index
     ports:
       - "8838:80"                      # Local network access only
     environment:
-      - TZ=${TZ}
-      - SCHEDULE=0 4 * * *             # Re-index daily at 4am
-    restart: always
+      TZ: ${TZ}
+      SCHEDULE: 0 4 * * *             # Re-index daily at 4am
+    restart: unless-stopped
     logging: *default-logging
 
   # ═══════════════════════════════════════════════════════════════════════════
@@ -111,14 +111,14 @@ services:
     build: ./scripts/qbit-scheduler
     container_name: qbit-scheduler
     environment:
-      - TZ=${TZ}
-      - QBIT_HOST=${NAS_IP}
-      - QBIT_PORT=8085
-      - QBIT_USER=${QBIT_USER}
-      - QBIT_PASS=${QBIT_PASSWORD}
-      - PAUSE_HOUR=${QBIT_PAUSE_HOUR}
-      - RESUME_HOUR=${QBIT_RESUME_HOUR}
-    restart: always
+      TZ: ${TZ}
+      QBIT_HOST: ${NAS_IP}
+      QBIT_PORT: 8085
+      QBIT_USER: ${QBIT_USER}
+      QBIT_PASS: ${QBIT_PASSWORD}
+      PAUSE_HOUR: ${QBIT_PAUSE_HOUR}
+      RESUME_HOUR: ${QBIT_RESUME_HOUR}
+    restart: unless-stopped
     logging: *default-logging
 
   # ═══════════════════════════════════════════════════════════════════════════
@@ -128,18 +128,18 @@ services:
   beszel:
     image: henrygd/beszel:0.18
     container_name: beszel
-    restart: always
+    restart: unless-stopped
     ports:
       - "8090:8090"
     networks:
       arr-stack:
-        ipv4_address: 172.20.0.15
+
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - beszel-data:/beszel_data
     environment:
-      - TZ=${TZ}
+      TZ: ${TZ}
     logging: *default-logging
     healthcheck:
       test: ["CMD", "/beszel", "health", "--url", "http://localhost:8090"]
@@ -151,13 +151,13 @@ services:
   beszel-agent:
     image: henrygd/beszel-agent:0.18
     container_name: beszel-agent
-    restart: always
+    restart: unless-stopped
     network_mode: host
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
-      - PORT=45876
-      - KEY=${BESZEL_KEY}
+      PORT: 45876
+      KEY: ${BESZEL_KEY}
     logging: *default-logging
     healthcheck:
       test: ["CMD", "/agent", "health"]
@@ -174,21 +174,21 @@ services:
   diun:
     image: crazymax/diun:4.31.0
     container_name: diun
-    restart: always
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - diun-data:/data
     networks:
       arr-stack:
-        ipv4_address: 172.20.0.16
+
     environment:
-      - TZ=${TZ}
-      - DIUN_WATCH_WORKERS=5
-      - DIUN_WATCH_SCHEDULE=${DIUN_SCHEDULE:-0 6 * * *}
-      - DIUN_PROVIDERS_DOCKER=true
-      - DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT=true
-      - DIUN_NOTIF_WEBHOOK_ENDPOINT=${DIUN_WEBHOOK_URL}
-      - DIUN_NOTIF_WEBHOOK_METHOD=POST
-      - DIUN_NOTIF_WEBHOOK_HEADERS_0_NAME=Content-Type
-      - DIUN_NOTIF_WEBHOOK_HEADERS_0_VALUE=application/json
+      TZ: ${TZ}
+      DIUN_WATCH_WORKERS: 5
+      DIUN_WATCH_SCHEDULE: ${DIUN_SCHEDULE:-0 6 * * *}
+      DIUN_PROVIDERS_DOCKER: true
+      DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: true
+      DIUN_NOTIF_WEBHOOK_ENDPOINT: ${DIUN_WEBHOOK_URL}
+      DIUN_NOTIF_WEBHOOK_METHOD: POST
+      DIUN_NOTIF_WEBHOOK_HEADERS_0_NAME: Content-Type
+      DIUN_NOTIF_WEBHOOK_HEADERS_0_VALUE: application/json
     logging: *default-logging

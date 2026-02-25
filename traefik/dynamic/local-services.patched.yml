@@ -1,13 +1,13 @@
 # Local .lan domain routing (port-free access)
 #
 # How it works:
-# 1. Pi-hole DNS resolves *.lan → TRAEFIK_LAN_IP (macvlan, e.g. 10.10.0.11)
+# 1. Pi-hole DNS resolves *.lan → Traefik macvlan IP (192.168.1.253)
 # 2. Browser requests http://sonarr.lan → Traefik on port 80 (macvlan IP)
 # 3. Traefik matches Host header → routes to correct service:port
 #
-# Result: http://sonarr.lan instead of http://10.10.0.10:8989
-#
-# Note: Requires Traefik macvlan setup (see docs/SETUP.md section 5.11)
+# Note:
+# - Pi-hole UI is assumed to be host-networked on the NAS and is NOT routed via Traefik.
+# - Backends are referenced by Docker service name (more stable than hard-coded container IPs).
 
 http:
   routers:
@@ -44,16 +44,17 @@ http:
       rule: "Host(`prowlarr.lan`)"
       entryPoints: [web]
       service: prowlarr-lan
-    
+
     lidarr-lan:
       rule: "Host(`lidarr.lan`)"
       entryPoints: [web]
       service: lidarr-lan
 
-    mylar3-lan:
-      rule: "Host(`mylar3.lan`)"
-      entryPoints: [web]
-      service: mylar3-lan
+    # mylar3-lan intentionally disabled unless the service is deployed
+    # mylar3-lan:
+    #   rule: "Host(`mylar3.lan`)"
+    #   entryPoints: [web]
+    #   service: mylar3-lan
 
     bazarr-lan:
       rule: "Host(`bazarr.lan`)"
@@ -77,10 +78,7 @@ http:
       entryPoints: [web]
       service: api@internal
 
-    pihole-lan:
-      rule: "Host(`pihole.lan`)"
-      entryPoints: [web]
-      service: pihole-lan
+    # NOTE: pihole.lan is NOT routed here (host-mode Pi-hole). DNS points pihole.lan → 192.168.1.10
 
     # === Utilities ===
     uptime-lan:
@@ -110,68 +108,62 @@ http:
     jellyfin-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.4:8096"
+          - url: "http://jellyfin:8096"
 
     jellyseerr-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.8:5055"
+          - url: "http://jellyseerr:5055"
 
-    # === *arr Stack (via Gluetun at 172.20.0.3) ===
+    # === *arr Stack (via Gluetun service) ===
     sonarr-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.3:8989"
+          - url: "http://gluetun:8989"
 
     radarr-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.3:7878"
+          - url: "http://gluetun:7878"
 
     prowlarr-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.3:9696"
+          - url: "http://gluetun:9696"
 
     lidarr-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.3:8686"
+          - url: "http://gluetun:8686"
 
     bazarr-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.9:6767"
+          - url: "http://bazarr:6767"
 
     # === Download Clients (via Gluetun) ===
     qbit-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.3:8085"
+          - url: "http://gluetun:8085"
 
     sabnzbd-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.3:8080"
-
-    # === Infrastructure ===
-    pihole-lan:
-      loadBalancer:
-        servers:
-          - url: "http://172.20.0.5:80"
+          - url: "http://gluetun:8080"
 
     # === Utilities ===
     uptime-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.13:3001"
+          - url: "http://uptime:3001"
 
     duc-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.14:80"
+          - url: "http://duc:80"
 
     beszel-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.15:8090"
+          - url: "http://beszel:8090"
