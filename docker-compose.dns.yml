@@ -13,6 +13,8 @@
 # - UI : http://NAS_IP:8081/admin
 # ═══════════════════════════════════════════════════════════════════════════════
 
+name: dns
+
 services:
   pihole:
     image: pihole/pihole:latest

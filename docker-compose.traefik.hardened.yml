@@ -12,6 +12,22 @@
 #
 # Access: traefik.lan | traefik.yourdomain.com | NAS_IP:9090
 # ═══════════════════════════════════════════════════════════════════════════════
+name: traefik
+
+networks:
+  arr-stack:
+    external: true
+    
+  # macvlan network gives Traefik its own IP on your physical LAN
+  # This allows Traefik to own port 80/443 (which NAS can't give up)
+  traefik-lan:
+    driver: macvlan
+    driver_opts:
+      parent: ${LAN_INTERFACE}  # Network interface - check with: ip link show
+    ipam:
+      config:
+        - subnet: ${LAN_SUBNET}
+          gateway: ${LAN_GATEWAY}
 
 services:
   traefik:
@@ -25,7 +41,6 @@ services:
       - /tmp
     networks:
       arr-stack:
-
       # macvlan gives Traefik its own LAN IP where it can use port 80
       # (NAS owns port 80 on its IP, but Traefik owns it on TRAEFIK_LAN_IP)
       traefik-lan:
@@ -66,23 +81,3 @@ services:
       timeout: 30s
       retries: 3
       start_period: 60s
-
-networks:
-  arr-stack:
-    external: true
-    #driver: bridge
-    #ipam:
-    #  config:
-    #    - subnet: 172.20.0.0/24
-    #      ip_range: 172.20.0.128/25
-    #      gateway: 172.20.0.1
-  # macvlan network gives Traefik its own IP on your physical LAN
-  # This allows Traefik to own port 80/443 (which NAS can't give up)
-  traefik-lan:
-    driver: macvlan
-    driver_opts:
-      parent: ${LAN_INTERFACE}  # Network interface - check with: ip link show
-    ipam:
-      config:
-        - subnet: ${LAN_SUBNET}
-          gateway: ${LAN_GATEWAY}

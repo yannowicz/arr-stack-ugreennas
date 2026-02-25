@@ -69,7 +69,6 @@ services:
       TZ: ${TZ}
     networks:
       arr-stack:
-        ipv4_address: 172.20.0.13  # For monitoring other containers
     volumes:
       - uptime-kuma-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock:ro  # For Docker container monitoring
@@ -91,7 +90,6 @@ services:
     container_name: duc
     networks:
       arr-stack:
-
     volumes:
       - /volume1:/scan/volume1:ro      # NAS data (read-only)
       - duc-index:/database            # Persistent index
@@ -133,7 +131,6 @@ services:
       - "8090:8090"
     networks:
       arr-stack:
-
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -180,7 +177,6 @@ services:
       - diun-data:/data
     networks:
       arr-stack:
-
     environment:
       TZ: ${TZ}
       DIUN_WATCH_WORKERS: 5

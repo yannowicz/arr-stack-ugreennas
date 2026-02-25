@@ -6,12 +6,12 @@
 #
 # NOTE: Pi-hole is moved to docker-compose.dns.yml (host network) for stability.
 #######################################################################
+name: arr-stack
 
 #########################
 # Centralized Volumes   #
 #########################
 volumes:
-
   gluetun-config:
   qbittorrent-config:
   sabnzbd-config:
@@ -20,8 +20,8 @@ volumes:
   radarr-config:
   lidarr-config:
   mylar3-config:
-  jellyseerr-config:
   bazarr-config:
+  jellyseerr-config:
   jellyfin-config:
   jellyfin-cache:
 
@@ -94,7 +94,6 @@ services:
       - "8082:8080"   # SABnzbd
     networks:
       arr-stack:
-        ipv4_address: 172.20.0.3
       vpn-net:
     restart: unless-stopped
     logging: *default-logging
@@ -351,26 +350,8 @@ services:
       - jellyfin-cache:/cache
       - ${ARR_DATA}/media:/data/media/:ro
       - ${MEDIA_ROOT}/Video/:/data/Video:ro
-    #  - ${VIDEO}/Anime:/media/anime:ro
-    #  - ${VIDEO}/Anime_Series:/media/anime_series:ro
-    #  - ${VIDEO}/Docu_Series:/media/docu_series:ro
-    #  - ${VIDEO}/Documentaries:/media/documentaries:ro
-    #  - ${VIDEO}/DVD_image:/media/dvd:ro
-    #  - ${VIDEO}/eLearning:/media/eLearning:ro
-    #  - ${VIDEO}/Home_Video:/media/home_video:ro
-    #  - ${VIDEO}/Magic:/media/magic:ro
-    #  - ${VIDEO}/Misc:/media/misc:ro
-    #  - ${VIDEO}/Movie:/media/movies:ro
-    #  - ${VIDEO}/Short:/media/short:ro
-    #  - ${VIDEO}/Sports:/media/sports:ro
-    #  - ${VIDEO}/StandUp:/media/standup:ro
-    #  - ${VIDEO}/TV_Show:/media/tv:ro
-
     networks:
       arr-stack:
-
-        ipv4_address: 172.20.0.3
-        ipv4_address: 172.20.0.4
     restart: unless-stopped
     logging: *default-logging
     healthcheck:
@@ -401,9 +382,6 @@ services:
       PORT: 5055
     networks:
       arr-stack:
-
-        ipv4_address: 172.20.0.3
-        ipv4_address: 172.20.0.8
     volumes:
       - jellyseerr-config:/app/config
     restart: unless-stopped
@@ -434,14 +412,10 @@ services:
       TZ: ${TZ}
     networks:
       arr-stack:
-
-        ipv4_address: 172.20.0.3
-        ipv4_address: 172.20.0.9
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - bazarr-config:/config
       - ${MEDIA_ROOT}/media:/data/media
-
     restart: unless-stopped
     logging: *default-logging
     healthcheck:
@@ -463,8 +437,6 @@ services:
       TZ: ${TZ}
     networks:
       arr-stack:
-
-        ipv4_address: 172.20.0.10
     labels:
       - deunhealth.restart.on.unhealthy=true
     restart: unless-stopped

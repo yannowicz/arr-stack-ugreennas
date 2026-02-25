@@ -1,4 +1,5 @@
 name: arr-stack_recyclar
+
 #########################
 # Centralized Volumes   #
 #########################
@@ -37,8 +38,7 @@ services:
       PGID: ${PGID}
       TZ: ${TZ}
     networks:
-      arr-stack:
-
+      - arr-stack
     volumes:
       - ./recyclarr:/config
       - recyclarr-data:/data
