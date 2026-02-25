@@ -29,10 +29,9 @@ services:
     image: pihole/pihole:latest
     container_name: pihole
     networks:
-      arr-stack:
       # macvlan gives Traefik its own LAN IP where it can use port 80
       # (NAS owns port 80 on its IP, but Traefik owns it on TRAEFIK_LAN_IP)
-      pihile-lan:
+      pihole-lan:
         ipv4_address: ${PIHOLE_LAN_IP}
         mac_address: ${PIHOLE_LAN_MAC}
     ports:
