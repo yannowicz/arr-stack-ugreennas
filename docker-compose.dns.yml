@@ -14,7 +14,9 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 name: dns
-
+networks:
+  arr-stack:
+    external: true
 services:
   pihole:
     image: pihole/pihole:latest
