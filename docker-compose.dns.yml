@@ -29,21 +29,22 @@ services:
     image: pihole/pihole:latest
     container_name: pihole
     networks:
-      # macvlan gives Traefik its own LAN IP where it can use port 80
-      # (NAS owns port 80 on its IP, but Traefik owns it on TRAEFIK_LAN_IP)
+      # macvlan gives Pihole its own LAN IP where it can use port 80
+      # (NAS owns port 80 on its IP, but Pihole owns it on PIHOLE_LAN_IP)
       pihole-lan:
         ipv4_address: ${PIHOLE_LAN_IP}
         mac_address: ${PIHOLE_LAN_MAC}
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      - "67:67/udp"
-      - "8081:80" # Pihole Dashboard
+      - "80:80" # Pihole Dashboard
     environment:
       TZ: ${TZ}
       #FTLCONF_webserver_port: "8081" #if in network-mode: host
       FTLCONF_webserver_api_password: ${PIHOLE_UI_PASS}
-      FTLCONF_dns_listeningMode: all
+      FTLCONF_dns_listeningMode: 'ALL'
+      FTLCONF_dns_revServers: 'true,192.168.0.0/16,192.168.0.1,lan'
+      FTLCONF_dns_upstreams: '1.1.1.1;9.9.9.9;8.8.8.8;8.8.4.4'
     volumes:
       - pihole-etc-pihole:/etc/pihole
       - pihole-etc-dnsmasq:/etc/dnsmasq.d
