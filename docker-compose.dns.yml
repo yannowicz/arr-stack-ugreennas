@@ -15,34 +15,15 @@
 
 name: dns
 
-networks:
-  pihole-lan:
-    driver: macvlan
-    driver_opts:
-      parent: ${LAN_INTERFACE}  # Network interface - check with: ip link show
-    ipam:
-      config:
-        - subnet: ${LAN_SUBNET}
-          gateway: ${LAN_GATEWAY}
 services:
   pihole:
     image: pihole/pihole:latest
     container_name: pihole
-    networks:
-      # macvlan gives Pihole its own LAN IP where it can use port 80
-      # (NAS owns port 80 on its IP, but Pihole owns it on PIHOLE_LAN_IP)
-      pihole-lan:
-        ipv4_address: ${PIHOLE_LAN_IP}
-        mac_address: ${PIHOLE_LAN_MAC}
-    ports:
-      - "53:53/tcp"
-      - "53:53/udp"
-      - "80:80" # Pihole Dashboard
-      - "443:443"
+    network_mode: host
     environment:
       TZ: ${TZ}
       FTLCONF_webserver_api_password: ${PIHOLE_UI_PASS}
-      FTLCONF_dns_listeningMode: 'local'
+      FTLCONF_dns_listeningMode: all
       FTLCONF_dns_revServers: 'true,192.168.0.0/16,192.168.0.254,lan'
       FTLCONF_dns_upstreams: '1.1.1.1;1.0.0.1;9.9.9.9;149.112.112.112;8.8.8.8;8.8.4.4;208.67.222.222;208.67.220.220'
       FTLCONF_misc_etc_dnsmasq_d: true

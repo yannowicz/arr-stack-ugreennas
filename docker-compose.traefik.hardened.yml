@@ -17,7 +17,6 @@ name: traefik
 networks:
   arr-stack:
     external: true
-    
   # macvlan network gives Traefik its own IP on your physical LAN
   # This allows Traefik to own port 80/443 (which NAS can't give up)
   traefik-lan:
