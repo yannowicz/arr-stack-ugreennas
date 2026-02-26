@@ -12,7 +12,6 @@
 # - DNS: NAS_IP:53
 # - UI : http://NAS_IP:8081/admin
 # ═══════════════════════════════════════════════════════════════════════════════
-
 name: dns
 
 networks:
@@ -34,7 +33,7 @@ services:
       FTLCONF_dns_revServers: 'true,192.168.0.0/16,192.168.0.254,lan'
       FTLCONF_dns_upstreams: '1.1.1.1;1.0.0.1;9.9.9.9;149.112.112.112;8.8.8.8;8.8.4.4;208.67.222.222;208.67.220.220'
       FTLCONF_misc_etc_dnsmasq_d: true
-      FTLCONF_webserver_port: '8081'
+      #FTLCONF_webserver_port: '8081'
     volumes:
       - pihole-etc-pihole:/etc/pihole
       - pihole-etc-dnsmasq:/etc/dnsmasq.d
@@ -42,6 +41,7 @@ services:
     cap_add:
       - NET_ADMIN
       - CAP_SYS_TIME
+      - CAP_SYS_NICE
     restart: unless-stopped
     init: true
     logging:
