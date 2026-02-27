@@ -20,7 +20,6 @@ services:
     command: tunnel --config /home/nonroot/.cloudflared/config.yml run
     security_opt:
       - no-new-privileges:true
-    read_only: true
     tmpfs:
       - /tmp
     volumes:
