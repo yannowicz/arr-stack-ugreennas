@@ -22,6 +22,7 @@ services:
     image: pihole/pihole:latest
     networks:
       arr-stack:
+        ipv4_address: 172.20.0.5
     ports:
       - "${NAS_IP}:53:53/tcp"  # Bind to NAS IP (not 0.0.0.0) to avoid conflict with host dnsmasq on 127.0.0.1:53
       - "${NAS_IP}:53:53/udp"  # NAS_IP MUST be a static IP — DHCP IPs aren't ready at boot, causing exit 128
