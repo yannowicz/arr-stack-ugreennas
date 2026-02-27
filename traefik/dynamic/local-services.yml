@@ -78,7 +78,10 @@ http:
       entryPoints: [web]
       service: api@internal
 
-    # NOTE: pihole.lan is NOT routed here (host-mode Pi-hole). DNS points pihole.lan → 192.168.1.10
+    pihole-lan:
+      rule: "Host(`pihole.lan`)"
+      entryPoints: [web]
+      service: pihole-lan
 
     # === Utilities ===
     uptime-lan:
@@ -151,6 +154,12 @@ http:
       loadBalancer:
         servers:
           - url: "http://gluetun:8080"
+    
+    # === Infrastructure ===
+    pihole-lan:
+      loadBalancer:
+        servers:
+          - url: "http://172.20.0.5:443"
 
     # === Utilities ===
     uptime-lan:
