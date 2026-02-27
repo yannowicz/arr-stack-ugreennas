@@ -434,12 +434,14 @@ services:
     #image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
-    environment:
-      LOG_LEVEL: info
-      TZ: ${TZ}
+    network_mode: "service:gluetun"
     depends_on:
       gluetun:
         condition: service_healthy
+    environment:
+      LOG_LEVEL: info
+      TZ: ${TZ}
+    
     labels:
       - deunhealth.restart.on.unhealthy=true
     restart: unless-stopped
