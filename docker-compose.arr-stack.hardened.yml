@@ -92,6 +92,7 @@ services:
       - "8090:8090"   # Mylar3
       - "8085:8085"   # qBittorrent
       - "8082:8080"   # SABnzbd
+      - "8191:8191"   # FlareSolverr
     networks:
       arr-stack:
       vpn-net:
