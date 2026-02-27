@@ -426,7 +426,8 @@ services:
     
   # ═══════════════════════════════════════════════════════════════════════════
   # FLARESOLVERR - Cloudflare bypass. Helps Prowlarr access protected sites.
-  # No web UI. Used internally by Prowlarr at 172.20.0.10:8191
+  # Runs behind Gluetun VPN so solved cookies match Prowlarr's exit IP.
+  # No web UI. Used internally by Prowlarr at localhost:8191
   # ═══════════════════════════════════════════════════════════════════════════
   flaresolverr:
     #image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
@@ -435,8 +436,9 @@ services:
     environment:
       LOG_LEVEL: info
       TZ: ${TZ}
-    networks:
-      arr-stack:
+    depends_on:
+      gluetun:
+        condition: service_healthy
     labels:
       - deunhealth.restart.on.unhealthy=true
     restart: unless-stopped
