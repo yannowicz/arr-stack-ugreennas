@@ -154,7 +154,7 @@ http:
       loadBalancer:
         servers:
           - url: "http://gluetun:8080"
-    
+
     # === Infrastructure ===
     pihole-lan:
       loadBalancer:
