@@ -159,7 +159,7 @@ http:
     pihole-lan:
       loadBalancer:
         servers:
-          - url: "http://172.20.0.5:443"
+          - url: "http://172.20.0.5:80"
 
     # === Utilities ===
     uptime-lan:
