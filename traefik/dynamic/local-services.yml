@@ -50,11 +50,10 @@ http:
       entryPoints: [web]
       service: lidarr-lan
 
-    # mylar3-lan intentionally disabled unless the service is deployed
-    # mylar3-lan:
-    #   rule: "Host(`mylar3.lan`)"
-    #   entryPoints: [web]
-    #   service: mylar3-lan
+    mylar3-lan:
+      rule: "Host(`mylar3.lan`)"
+      entryPoints: [web]
+      service: mylar3-lan
 
     bazarr-lan:
       rule: "Host(`bazarr.lan`)"
@@ -138,6 +137,11 @@ http:
       loadBalancer:
         servers:
           - url: "http://gluetun:8686"
+
+    mylar3-lan:
+      loadBalancer:
+        servers:
+          - url: "http://gluetun:8090"
 
     bazarr-lan:
       loadBalancer:

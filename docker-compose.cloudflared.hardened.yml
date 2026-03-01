@@ -10,9 +10,27 @@
 # - Keep this stack independent so restarting other stacks doesn't kill the tunnel.
 # - Prefer "unless-stopped" to avoid restart loops during maintenance.
 # ═══════════════════════════════════════════════════════════════════════════════
-
 name: cloudflared
 
+#########################
+# Networks              #
+#########################
+networks:
+  arr-stack:
+    external: true
+
+#########################
+# Logging               #
+#########################
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+#########################
+# Services              #
+#########################
 services:
   cloudflared:
     image: cloudflare/cloudflared:2026.2.0
@@ -35,12 +53,4 @@ services:
     labels:
       - "deunhealth.restart.on.unhealthy=true"
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-networks:
-  arr-stack:
-    external: true
+    logging: *default-logging

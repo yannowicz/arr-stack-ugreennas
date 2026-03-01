@@ -14,9 +14,13 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 name: traefik
 
+#########################
+# Networks              #
+#########################
 networks:
   arr-stack:
     external: true
+
   # macvlan network gives Traefik its own IP on your physical LAN
   # This allows Traefik to own port 80/443 (which NAS can't give up)
   traefik-lan:
@@ -26,8 +30,20 @@ networks:
     ipam:
       config:
         - subnet: ${LAN_SUBNET}
-        - gateway: ${LAN_GATEWAY}
+          gateway: ${LAN_GATEWAY}
 
+#########################
+# Logging               #
+#########################
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+#########################
+# Services              #
+#########################
 services:
   traefik:
     image: traefik:v3.0
@@ -39,7 +55,6 @@ services:
       - /tmp
     networks:
       arr-stack:
-
       # macvlan gives Traefik its own LAN IP where it can use port 80
       # (NAS owns port 80 on its IP, but Traefik owns it on TRAEFIK_LAN_IP)
       traefik-lan:
@@ -70,11 +85,7 @@ services:
       # Dashboard authentication
       # Generate with: htpasswd -nbB admin 'YOUR_PASSWORD'
       - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s

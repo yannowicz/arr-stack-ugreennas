@@ -14,9 +14,32 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 name: dns
 
+#########################
+# Volumes               #
+#########################
+volumes:
+  pihole-etc-pihole:
+  pihole-etc-dnsmasq:
+
+#########################
+# Networks              #
+#########################
 networks:
   arr-stack:
     external: true
+
+#########################
+# Logging               #
+#########################
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+#########################
+# Services              #
+#########################
 services:
   pihole:
     image: pihole/pihole:latest
@@ -31,9 +54,9 @@ services:
     environment:
       TZ: ${TZ}
       FTLCONF_webserver_api_password: ${PIHOLE_UI_PASS}
-      FTLCONF_dns_listeningMode: all
+      FTLCONF_dns_listeningMode: local
       FTLCONF_dns_revServers: 'true,192.168.1.0/24,192.168.1.254,lan'
-      FTLCONF_dns_upstreams: '1.1.1.1;1.0.0.1;9.9.9.9;149.112.112.112;8.8.8.8;8.8.4.4;208.67.222.222;208.67.220.220'
+      FTLCONF_dns_upstreams: '1.1.1.1;1.0.0.1;208.67.222.222;208.67.220.220'
       FTLCONF_misc_etc_dnsmasq_d: true
       #FTLCONF_webserver_port: '8081'
     volumes:
@@ -46,18 +69,10 @@ services:
       - CAP_SYS_NICE
     restart: unless-stopped
     init: true
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "dig", "@127.0.0.1", "-p", "53", "google.com", "+short"]
       interval: 30s
       timeout: 10s
       retries: 2
       start_period: 30s
-
-volumes:
-  pihole-etc-pihole:
-  pihole-etc-dnsmasq:
