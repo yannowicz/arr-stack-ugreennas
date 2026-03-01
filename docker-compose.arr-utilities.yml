@@ -7,10 +7,10 @@
 name: configarr
 
 #########################
-# CVolumes   #
+# Volumes               #
 #########################
 volumes:
-  recyclarr-data:
+  configarr-repos:
 
 #########################
 # Networks              #
