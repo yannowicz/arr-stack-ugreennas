@@ -17,17 +17,17 @@ http:
       entryPoints: [web]
       service: jellyfin-lan
 
-    jellyseerr-lan:
-      rule: "Host(`jellyseerr.lan`)"
+    seerr-lan:
+      rule: "Host(`seerr.lan`)"
       entryPoints: [web]
-      service: jellyseerr-lan
+      service: seerr-lan
 
-    # Typo redirects (jellyseer -> jellyseerr)
-    jellyseer-lan:
-      rule: "Host(`jellyseer.lan`)"
+    # Typo redirects (seer -> seerr)
+    seer-lan:
+      rule: "Host(`seer.lan`)"
       entryPoints: [web]
-      middlewares: [jellyseer-redirect]
-      service: jellyseerr-lan
+      middlewares: [seer-redirect]
+      service: seerr-lan
 
     # === *arr Stack (VPN-protected via Gluetun) ===
     sonarr-lan:
@@ -99,10 +99,10 @@ http:
       service: beszel-lan
 
   middlewares:
-    jellyseer-redirect:
+    seer-redirect:
       redirectRegex:
-        regex: "^http://jellyseer[.]lan(.*)"
-        replacement: "http://jellyseerr.lan${1}"
+        regex: "^http://seer[.]lan(.*)"
+        replacement: "http://seerr.lan${1}"
         permanent: true
 
   services:
@@ -112,10 +112,10 @@ http:
         servers:
           - url: "http://jellyfin:8096"
 
-    jellyseerr-lan:
+    seerr-lan:
       loadBalancer:
         servers:
-          - url: "http://jellyseerr:5055"
+          - url: "http://seerr:5055"
 
     # === *arr Stack (via Gluetun service) ===
     sonarr-lan:
